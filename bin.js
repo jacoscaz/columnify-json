@@ -1,22 +1,42 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+/*
+ * TODO: There's way too much looping in here. Very likely some loops
+ *       can be collapsed into one another, significantly improving
+ *       performance.
+ */
 
+/**
+ * Given an array of object entries, returns an array of entries
+ * where each key is accompanied by the formatted inline representation
+ * of its original value.
+ *
+ * @param {[string, any][]} entriesArr
+ * @returns {[string, any, string][]}
+ */
 const formatObjectEntriesInline = (entriesArr) => {
-  const sortedArr = entriesArr.slice().sort(([aKey], [bKey]) => aKey < bKey ? -1 : 1);
-  const formattedEntriesMap = new Map();
-  sortedArr.forEach(([key, val]) => {
-    formattedEntriesMap.set(key, [key, val, formatValueInline(val)]);
-  });
-  return formattedEntriesMap;
+  return entriesArr
+    .sort(([ak], [bk]) => ak < bk ? -1 : 1)
+    .map(([key, val]) => [key, formatValueInline(val)]);
 };
 
+/**
+ * Given an object, returns an inline JSON representation of it.
+ *
+ * @param {Object<any>>} obj
+ * @returns {string}
+ */
 const formatObjectInline = (obj) => {
-  const formattedEntriesArr = [...formatObjectEntriesInline(Object.entries(obj)).values()];
-  return `{ ${formattedEntriesArr.map(([key, val, formattedVal]) => `"${key}": ${formattedVal}`).join(', ')} }`;
+  const formattedEntriesArr = formatObjectEntriesInline(Object.entries(obj));
+  return `{ ${formattedEntriesArr.map(([key, formattedVal]) => `"${key}": ${formattedVal}`).join(', ')} }`;
 };
 
+/**
+ * Given an array, returns an inline JSON representation of it.
+ *
+ * @param {any[]}
+ * @returns {string}
+ */
 const formatArrayInline = (itemArr) => {
   const formattedItemArr = itemArr.map((item) => {
     return formatValueInline(item);
@@ -24,7 +44,13 @@ const formatArrayInline = (itemArr) => {
   return `[${formattedItemArr.join(', ')}]`;
 };
 
-const formatValueInline = (val, maxValueLengthsByKey) => {
+/**
+ * Given a value of any type, returns an inline JSON representation of it.
+ *
+ * @param {any} val
+ * @returns {string}
+ */
+const formatValueInline = (val) => {
   switch (typeof val) {
     case 'number':
     case 'string':
@@ -37,69 +63,112 @@ const formatValueInline = (val, maxValueLengthsByKey) => {
       if (Array.isArray(val)) {
         return formatArrayInline(val);
       }
-      return formatObjectInline(val, maxValueLengthsByKey);
+      return formatObjectInline(val);
     case 'undefined':
-      throw new Error('cannot format "undefined"');
+      throw new Error('columnify-json: values of type "undefined" are not supported');
     case 'function':
-      throw new Error('cannot format "function"');
+      throw new Error('columnify-json: values of type "function" are not supported');
     default:
-      throw new Error(`cannot format unknown type ${typeof val}`);
+      throw new Error(`columnify-json: values of type "${typeof val}" are not supported`);
   }
 };
 
+/**
+ * Given an array of object entries, returns an array of entries with the same
+ * keys but with formatted values.
+ *
+ * Note: A "subvalue" is a value of the property of an object that is itself the
+ *       value of an entry.
+ *
+ * Note: A "subkey" is a key of an object that is itself the value of an entry.
+ *
+ *
+ * @param {[string, any][]} entriesArr
+ * @returns {[string, string][]}
+ */
 const formatEntriesArrPretty = (entriesArr) => {
-  const maxValueLengthsByKey = Object.create(null);
-  const formattedItemArr = entriesArr.map(([key, val]) => {
+  // A dictionary of max. lengths of subvalues, keyed by subkey.
+  // Each key maps to the length of the longest value seen for
+  // the key itself across all entries with object-like values.
+  const maxSubvalLenBySubkey = Object.create(null);
+  const formattedEntriesArr = entriesArr.map(([key, val]) => {
     if (typeof val === 'object' && val !== null) {
-      const formattedEntriesMap = formatObjectEntriesInline(Object.entries(val));
-      for (const [_key, _val, _formattedVal] of formattedEntriesMap.values()) {
-        maxValueLengthsByKey[_key] = Math.max(_formattedVal.length, maxValueLengthsByKey[_key] || 0);
+      const formattedEntriesArr = formatObjectEntriesInline(Object.entries(val))
+      const formattedSubvalsBySubkey = Object.create(null);
+      for (const [subkey, formattedSubval] of formattedEntriesArr) {
+        formattedSubvalsBySubkey[subkey] = formattedSubval;
+        maxSubvalLenBySubkey[subkey] = Math.max(formattedSubval.length, maxSubvalLenBySubkey[subkey] || 0);
       }
-      return [key, formattedEntriesMap];
+      return [key, formattedEntriesArr, formattedSubvalsBySubkey];
     }
     return [key, formatValueInline(val)];
   });
-  const sortedKeys = Object.keys(maxValueLengthsByKey).sort((a, b) => a < b ? -1 : 1);
-  return formattedItemArr.map(([key, valOrEntries]) => {
-    if (typeof valOrEntries === 'string') {
-      return [key, valOrEntries];
+  const sortedSubkeys = Object.keys(maxSubvalLenBySubkey)
+    .sort((a, b) => a < b ? -1 : 1);
+  return formattedEntriesArr.map(([key, formValOrEntriesArr, formSubvalsBySubkey]) => {
+    if (typeof formValOrEntriesArr === 'string') {
+      return [key, formValOrEntriesArr];
     }
-    if (valOrEntries instanceof Map) {
-      let output = '{ ';
-      let pendingSeparator = false;
-      let pendingWhitespace = '';
-      sortedKeys.forEach((_key, _i) => {
-        if (valOrEntries.has(_key)) {
-          const [,, formattedVal] = valOrEntries.get(_key);
-          if (pendingSeparator) {
-            output += ', ';
-          }
-          pendingSeparator = true;
-          output += pendingWhitespace;
-          pendingWhitespace = '';
-          output += `"${_key}": ${formattedVal.padEnd(maxValueLengthsByKey[_key], ' ')}`;
-        } else {
-          pendingWhitespace += ''.padEnd(6 + _key.length + maxValueLengthsByKey[_key], ' ');
+    let output = '{ ';
+    let pendingSeparator = false;
+    let pendingWhitespace = '';
+    sortedSubkeys.forEach((subkey) => {
+      if (subkey in formSubvalsBySubkey) {
+        if (pendingSeparator) {
+          output += ', ';
         }
-      });
-      output += pendingWhitespace + ' }';
-      return [key, output];
-    }
-    throw new Error('should not be here');
+        pendingSeparator = true;
+        output += pendingWhitespace;
+        pendingWhitespace = '';
+        output += `"${subkey}": ${formSubvalsBySubkey[subkey].padEnd(maxSubvalLenBySubkey[subkey], ' ')}`;
+      } else {
+        pendingWhitespace += ''.padEnd(6 + subkey.length + maxSubvalLenBySubkey[subkey], ' ');
+      }
+    });
+    output += pendingWhitespace + ' }';
+    return [key, output];
   });
 };
 
-const formatObjectPretty = (obj) => {
-  const formattedEntries = formatEntriesArrPretty(Object.entries(obj));
-  const maxKeyLen = formattedEntries.reduce((maxLen, [key]) => Math.max(maxLen, key.length), 0);
-  return `{\n  ${formatEntriesArrPretty(Object.entries(obj)).map(([key, val]) => `${`"${key}"`.padEnd(maxKeyLen + 2, ' ')}: ${val}`).join(',\n  ')}\n}`;
+/**
+ * Given an object, returns a multi-line JSON representation of it.
+ *
+ * @param {Object.<string, any>} obj
+ * @returns {string}
+ */
+const formatObjectMultiline = (obj) => {
+  const entriesArr = Object.entries(obj);
+  const formattedEntriesArr = formatEntriesArrPretty(entriesArr);
+  const maxKeyLen = formattedEntriesArr.reduce(
+    (maxLen, [key]) => Math.max(maxLen, key.length),
+    0,
+  ) + 2;
+  const paddedKeysformattedEntriesArr = formattedEntriesArr.map(
+    ([key, val]) => `${`"${key}"`.padEnd(maxKeyLen, ' ')}: ${val}`
+  );
+  return `{\n  ${paddedKeysformattedEntriesArr.join(',\n  ')}\n}`;
 };
 
-const formatArrayPretty = (itemArr) => {
-  return `[\n  ${formatEntriesArrPretty(itemArr.map((v, i) => [i, v])).map(([fi, fv]) => fv).join(',\n  ')}\n]`;
+/**
+ * Given an array, returns a multi-line JSON representation of it.
+ *
+ * @param {any[]} arr
+ * @returns {string}
+ */
+const formatArrayMultiline = (arr) => {
+  const asEntriesArr = arr.map((v, i) => [i, v]);
+  const formattedEntriesArr = formatEntriesArrPretty(asEntriesArr);
+  const formattedArr = formattedEntriesArr.map(([, fv]) => fv);
+  return `[\n  ${formattedArr.join(',\n  ')}\n]`;
 };
 
-const formatValuePretty = (val) => {
+/**
+ * Given a value of any type, returns a multi-line JSON representation of it.
+ *
+ * @param {any} val
+ * @returns {string}
+ */
+const formatValueMultiline = (val) => {
   switch (typeof val) {
     case 'number':
     case 'string':
@@ -110,23 +179,27 @@ const formatValuePretty = (val) => {
         return JSON.stringify(val, null, 2);
       }
       if (Array.isArray(val)) {
-        return formatArrayPretty(val);
+        return formatArrayMultiline(val);
       }
-      return formatObjectPretty(val);
+      return formatObjectMultiline(val);
     case 'undefined':
-      throw new Error('cannot format "undefined"');
+      throw new Error('columnify-json: values of type "undefined" are not supported');
     case 'function':
-      throw new Error('cannot format "function"');
+      throw new Error('columnify-json: values of type "function" are not supported');
     default:
-      throw new Error(`cannot format unknown type ${typeof val} ${val}`);
+      throw new Error(`columnify-json: values of type "${typeof val}" are not supported`);
   }
 };
 
 if (process.argv[2]) {
 
+  const fs = require('fs');
+  const path = require('path');
+
   const file = path.resolve(process.cwd(), process.argv[2]);
   const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-  console.log(formatValuePretty(data));
+
+  console.log(formatValueMultiline(data));
 
 } else {
 
@@ -136,7 +209,7 @@ if (process.argv[2]) {
 
   parser.onValue = function (val) {
     if (this.stack.length === 0) {
-      console.log(formatValuePretty(val));
+      console.log(formatValueMultiline(val));
     }
   };
 

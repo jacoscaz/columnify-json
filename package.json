@@ -1,12 +1,16 @@
 {
   "name": "columnify-json",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "description": "A simple, one-dependency CLI tool to render JSON collections (objects, arrays, ...) in columnar form",
   "main": "index.js",
   "bin": "./bin.js",
   "scripts": {
     "test": "node test/test.js"
   },
+  "files": [
+    "bin.js",
+    "main.js"
+  ],
   "author": "Jacopo Scazzosi <jacopo@scazzosi.com>",
   "license": "MIT",
   "dependencies": {
