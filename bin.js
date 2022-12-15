@@ -132,17 +132,18 @@ if (process.argv[2]) {
 
 } else {
 
-  let length = 0;
-  const chunks = [];
+  const Parser = require('jsonparse');
+
+  const parser = new Parser();
+
+  parser.onValue = function (val) {
+    if (this.stack.length === 0) {
+      console.log(formatValuePretty(val));
+    }
+  };
 
   process.stdin.on('data', (chunk) => {
-    chunks.push(chunk);
-    length += chunk.length;
-  });
-
-  process.stdin.on('end', () => {
-    const data = JSON.parse(Buffer.concat(chunks, length));
-    console.log(formatValuePretty(data));
+    parser.write(chunk);
   });
 
 }
