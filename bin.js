@@ -66,25 +66,23 @@ const formatEntriesArrPretty = (entriesArr) => {
     }
     if (valOrEntries instanceof Map) {
       let output = '{ ';
-      let empty = true;
+      let pendingSeparator = false;
+      let pendingWhitespace = '';
       sortedKeys.forEach((_key, _i) => {
         if (valOrEntries.has(_key)) {
           const [,, formattedVal] = valOrEntries.get(_key);
-          if (empty) {
-            empty = false;
-          } else {
+          if (pendingSeparator) {
             output += ', ';
           }
+          pendingSeparator = true;
+          output += pendingWhitespace;
+          pendingWhitespace = '';
           output += `"${_key}": ${formattedVal.padEnd(maxValueLengthsByKey[_key], ' ')}`;
         } else {
-          if (!empty) {
-            output += ', ';
-          }
-          output += ''.padEnd(6 + _key.length + maxValueLengthsByKey[_key], ' ');
-          empty = true;
+          pendingWhitespace += ''.padEnd(6 + _key.length + maxValueLengthsByKey[_key], ' ');
         }
       });
-      output += ' }';
+      output += pendingWhitespace + ' }';
       return [key, output];
     }
     throw new Error('should not be here');
