@@ -77,7 +77,10 @@ const formatEntriesArrPretty = (entriesArr) => {
           }
           output += `"${_key}": ${formattedVal.padEnd(maxValueLengthsByKey[_key], ' ')}`;
         } else {
-          output += ', '.padEnd(8 + _key.length + maxValueLengthsByKey[_key], ' ');
+          if (!empty) {
+            output += ', ';
+          }
+          output += ''.padEnd(6 + _key.length + maxValueLengthsByKey[_key], ' ');
           empty = true;
         }
       });
