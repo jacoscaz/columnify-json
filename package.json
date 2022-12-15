@@ -1,6 +1,6 @@
 {
   "name": "columnify-json",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A simple, one-dependency CLI tool to render JSON collections (objects, arrays, ...) in columnar form",
   "main": "index.js",
   "bin": "./bin.js",

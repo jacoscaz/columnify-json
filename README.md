@@ -1,5 +1,5 @@
 
-# tabulate-json
+# columnify-json
 
 A simple, one-dependency CLI tool to render JSON collections
 (objects, arrays, ...) in columnar form.
@@ -8,19 +8,28 @@ tools, such as `jq` and `grep`, for maximum effect.
 
 ## How to use
 
-I have not published this on NPM, yet.
+Install:
 
 ```shell
-git clone https://github.com/jacoscaz/tabulate-json
-cd tabulate-json
-npm link
+npm install -g columnify-json
 ```
 
-After the above, running 
-`echo '[{"foo": {"b": 42}}, {"foo": null, "bar": {"a": 17}}]' | tabulate-json` 
-will output the following:
+Use:
 
 ```shell
+columnify-json /path/to/file.json       // reads from file
+echo '{"foo": "bar"}' | columnify-json  // reads from stdin
+```
+
+With an input such as
+
+```json
+[{"foo": {"b": 42}}, {"foo": null, "bar": {"a": 17}}]
+```
+
+`columnify-json` will output the following:
+
+```json
 [
   {                     "foo": { "b": 42 } },
   { "bar": { "a": 17 }, "foo": null        }
