@@ -1,7 +1,7 @@
 {
-  "name": "tabulate-json",
+  "name": "columnify-json",
   "version": "0.2.0",
-  "description": "A simple, one-dependency CLI tool to render JSON in tabular form",
+  "description": "A simple, one-dependency CLI tool to render JSON collections (objects, arrays, ...) in columnar form",
   "main": "index.js",
   "bin": "./bin.js",
   "scripts": {

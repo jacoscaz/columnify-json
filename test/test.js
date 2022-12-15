@@ -3,7 +3,7 @@ const path = require('path');
 const assert = require('assert');
 const childProcess = require('child_process');
 
-const tabulateAndCheck = (input, expected) => {
+const columnifyAndCheck = (input, expected) => {
   return new Promise((resolve, reject) => {
     const child = childProcess.fork(path.resolve(__dirname, '..', 'bin.js'), { silent: true });
     let stdout = '';
@@ -31,17 +31,17 @@ const tabulateAndCheck = (input, expected) => {
 
 (async () => {
 
-  await tabulateAndCheck('42\n', '42');
-  await tabulateAndCheck('true\n', 'true');
-  await tabulateAndCheck('null\n', 'null');
-  await tabulateAndCheck('"hello"', '"hello"');
-  await tabulateAndCheck('{"foo": "bar"}', '{\n  "foo": "bar"\n}');
-  await tabulateAndCheck('{"foo": 42, "bar": 42}', '{\n  "foo": 42,\n  "bar": 42\n}');
-  await tabulateAndCheck('[{"foo": 42}, {"bar": 42}]', '[\n  {            "foo": 42 },\n  { "bar": 42            }\n]');
-  await tabulateAndCheck('[{"bar": 42}, {"foo": 42}]', '[\n  { "bar": 42            },\n  {            "foo": 42 }\n]');
-  await tabulateAndCheck('[{"foo": 42}, {"bar": 42}, {"baz": 42}]', '[\n  {                       "foo": 42 },\n  { "bar": 42                       },\n  {            "baz": 42            }\n]');
-  await tabulateAndCheck('{"one": {"foo": 42}, "two": {"bar": 42}}', '{\n  "one": {            "foo": 42 },\n  "two": { "bar": 42            }\n}');
-  await tabulateAndCheck('[{"foo": 42, "bar": 43}, {"foo": true, "baz": false}]', '[\n  { "bar": 43,               "foo": 42   },\n  {            "baz": false, "foo": true }\n]');
+  await columnifyAndCheck('42\n', '42');
+  await columnifyAndCheck('true\n', 'true');
+  await columnifyAndCheck('null\n', 'null');
+  await columnifyAndCheck('"hello"', '"hello"');
+  await columnifyAndCheck('{"foo": "bar"}', '{\n  "foo": "bar"\n}');
+  await columnifyAndCheck('{"foo": 42, "bar": 42}', '{\n  "foo": 42,\n  "bar": 42\n}');
+  await columnifyAndCheck('[{"foo": 42}, {"bar": 42}]', '[\n  {            "foo": 42 },\n  { "bar": 42            }\n]');
+  await columnifyAndCheck('[{"bar": 42}, {"foo": 42}]', '[\n  { "bar": 42            },\n  {            "foo": 42 }\n]');
+  await columnifyAndCheck('[{"foo": 42}, {"bar": 42}, {"baz": 42}]', '[\n  {                       "foo": 42 },\n  { "bar": 42                       },\n  {            "baz": 42            }\n]');
+  await columnifyAndCheck('{"one": {"foo": 42}, "two": {"bar": 42}}', '{\n  "one": {            "foo": 42 },\n  "two": { "bar": 42            }\n}');
+  await columnifyAndCheck('[{"foo": 42, "bar": 43}, {"foo": true, "baz": false}]', '[\n  { "bar": 43,               "foo": 42   },\n  {            "baz": false, "foo": true }\n]');
 
   console.log('Done! All tests passed.');
 

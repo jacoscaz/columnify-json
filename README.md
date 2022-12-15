@@ -1,7 +1,8 @@
 
 # tabulate-json
 
-A simple, one-dependency CLI tool to render JSON in tabular form.
+A simple, one-dependency CLI tool to render JSON collections
+(objects, arrays, ...) in columnar form.
 Useful for working through configuration files. Use with other CLI
 tools, such as `jq` and `grep`, for maximum effect.
 
