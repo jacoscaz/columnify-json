@@ -1,12 +1,23 @@
 {
   "name": "columnify-json",
-  "version": "0.2.3",
-  "description": "A simple, one-dependency CLI tool to render JSON collections (objects, arrays, ...) in columnar form",
+  "version": "0.2.4",
+  "description": "A simple, one-dependency JSON formatter that uses whitespace and key (re)ordering to tabulate entries in JSON collections.",
   "main": "index.js",
   "bin": "./bin.js",
   "scripts": {
     "test": "node test/test.js"
   },
+  "keywords": [
+    "json",
+    "formatter",
+    "tabular",
+    "tabulate",
+    "columns",
+    "collections",
+    "whitespace",
+    "columnify",
+    "cli"
+  ],
   "files": [
     "bin.js",
     "main.js"

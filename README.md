@@ -1,27 +1,15 @@
 
 # columnify-json
 
-A simple, one-dependency CLI tool to render JSON collections
-(objects, arrays, ...) in columnar form.
-Useful for working through configuration files. Use with other CLI
-tools, such as `jq` and `grep`, for maximum effect.
+A simple, one-dependency JSON formatter that uses whitespace and key
+(re)ordering to tabulate entries in JSON collections.
 
-## How to use
+Particularly useful for certain kinds of configuration files. Combine
+with other CLI tools such as `jq` and `grep` for maximum effect.
 
-Install:
+## Example 
 
-```shell
-npm install -g columnify-json
-```
-
-Use:
-
-```shell
-columnify-json /path/to/file.json       // reads from file
-echo '{"foo": "bar"}' | columnify-json  // reads from stdin
-```
-
-With an input such as
+With an input such as:
 
 ```json
 [{"foo": {"b": 42}}, {"foo": null, "bar": {"a": 17}}]
@@ -34,4 +22,17 @@ With an input such as
   {                     "foo": { "b": 42 } },
   { "bar": { "a": 17 }, "foo": null        }
 ]
+```
+
+## Install
+
+```shell
+npm install -g columnify-json
+```
+
+## Usage
+
+```shell
+columnify-json /path/to/file.json       // reads from file
+echo '{"foo": "bar"}' | columnify-json  // reads from stdin
 ```
